@@ -663,7 +663,7 @@
             <div class="cond-name">${c.label}</div>
             <div class="cond-meta">
               Visibility: ${getVisMode(c).replace("_", " ")} &middot;
-              Chat: ${c.chat_enabled ? "Enabled" : "Disabled"} &middot;
+              Chat: ${c.chat_enabled ? "Enabled" : "Disabled"}
             </div>
           </div>
           <button type="button" class="cond-launch-btn" onclick="startCondition(${idx})">
@@ -1081,15 +1081,23 @@
           }, 1000)
         );
 
+        activeTimers.push(
+          setTimeout(() => {
+            appendChatMessage(2, "hi");
+          }, 1500)
+        );
+        activeTimers.push(
+          setTimeout(() => {
+            appendChatMessage(2, "testing out chat box");
+          }, 4500)
+        );
+
         setupChatListeners(
           (msg) => {
             appendChatMessage(1, msg);
             activeTimers.push(
               setTimeout(() => {
-                appendChatMessage(
-                  2,
-                  "Hi! Ready to test the maze when you are."
-                );
+                appendChatMessage(2, "testing out chat box");
               }, 900)
             );
           },
@@ -1576,6 +1584,15 @@
           setupChatListeners(
             (msg) => {
               appendChatMessage(1, msg);
+              if (opts.mode === "partner_explore") {
+                activeTimers.push(
+                  setTimeout(() => {
+                    if (taskActive)
+                      appendChatMessage(2, "testing out chat box");
+                  }, 900)
+                );
+                return;
+              }
               const lower = msg.toLowerCase();
               const mid = Math.floor(gridSize / 2);
               let reply = "Sounds good! Heading that way.";
@@ -1636,12 +1653,25 @@
             () => activeGame && activeGame.scene.scenes[0]
           );
 
-          activeTimers.push(
-            setTimeout(() => {
-              if (taskActive)
-                appendChatMessage(2, "Hey! Where should we meet?");
-            }, 2000)
-          );
+          if (opts.mode === "partner_explore") {
+            activeTimers.push(
+              setTimeout(() => {
+                if (taskActive) appendChatMessage(2, "hi");
+              }, 1500)
+            );
+            activeTimers.push(
+              setTimeout(() => {
+                if (taskActive) appendChatMessage(2, "testing out chat box");
+              }, 4500)
+            );
+          } else {
+            activeTimers.push(
+              setTimeout(() => {
+                if (taskActive)
+                  appendChatMessage(2, "Hey! Where should we meet?");
+              }, 2000)
+            );
+          }
         }
       }
 
