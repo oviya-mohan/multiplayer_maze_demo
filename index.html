@@ -925,7 +925,7 @@
       `;
       }
 
-      function mountPreviewScene(parentId, showPartner, applyFog) {
+      function mountPreviewScene(parentId, showPartner, applyFog, showMushroom = false) {
         const gridSize = 15;
         const tileSize = cond.constrained_camera && applyFog ? 40 : 32;
         const scale = tileSize / 16;
@@ -967,7 +967,10 @@
               this.add.sprite(0, -2, "avatar", 0).setScale(1.2),
             ]);
 
-            if (showPartner) {
+            if (showMushroom) {
+            this.add.sprite(8 * tileSize + tileSize / 2, 7 * tileSize + tileSize / 2, "things", 6).setScale(scale);
+          }
+          if (showPartner) {
               const pCont = this.add.container(
                 8 * tileSize + tileSize / 2,
                 8 * tileSize + tileSize / 2,
