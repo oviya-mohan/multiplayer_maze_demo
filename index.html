@@ -121,7 +121,7 @@
         background: #3e6e25;
       }
 
-      /* --- INSTRUCTION PAGES --- */
+      /* --- INSTRUCTION & COMPREHENSION PAGES --- */
       .inst-wrapper {
         max-width: 820px;
         margin: 24px auto;
@@ -139,6 +139,61 @@
         font-size: 19px;
         line-height: 1.5;
         margin-bottom: 18px;
+      }
+
+      .comp-wrapper {
+        max-width: 850px;
+        margin: 25px auto;
+        text-align: center;
+        color: #111;
+      }
+
+      .comp-header {
+        font-size: 20px;
+        margin-bottom: 25px;
+      }
+
+      .comp-card {
+        background-color: #b5dce8;
+        padding: 35px 50px;
+        margin-bottom: 25px;
+        border-radius: 2px;
+      }
+
+      .comp-question {
+        font-size: 20px;
+        line-height: 1.4;
+        margin-bottom: 12px;
+      }
+
+      .comp-asterisk {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+
+      .radio-group {
+        display: flex;
+        justify-content: center;
+        gap: 35px;
+        font-size: 19px;
+      }
+
+      .radio-group label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .comp-error {
+        background: #fde8e8;
+        color: #9b1c1c;
+        border: 1px solid #f8b4b4;
+        border-radius: 4px;
+        padding: 10px 16px;
+        margin-bottom: 18px;
+        font-size: 15px;
       }
 
       .preview-box {
@@ -707,6 +762,7 @@
             : []),
           { type: "partner_explore", label: "Partner Explore (30s)" },
           { type: "main_instructions", label: "Main Task Instructions" },
+          { type: "comprehension_check", label: "Comprehension Check" },
           ...mainSeq.map((m, i) => ({
             type: "rendezvous_task",
             mazeFile: m,
@@ -755,13 +811,15 @@
         else if (step.type === "chat_practice") renderChatPractice();
         else if (step.type === "partner_explore") renderPartnerExplore();
         else if (step.type === "main_instructions") renderMainInstructions();
+        else if (step.type === "comprehension_check")
+          renderComprehensionCheck();
         else if (step.type === "rendezvous_task") renderRendezvousTask(step);
         else if (step.type === "partner_feedback") renderPartnerFeedback();
         else if (step.type === "thank_you") renderThankYou();
       }
 
       // =========================================================================
-      // 4. INSTRUCTION & FEEDBACK SCREENS
+      // 4. INSTRUCTION, COMPREHENSION & FEEDBACK SCREENS
       // =========================================================================
       function renderPhase1Instructions() {
         document.getElementById("app-root").innerHTML = `
@@ -885,6 +943,77 @@
         </div>
       `;
         mountPreviewScene("main-preview-container", true, true, false);
+      }
+
+      function renderComprehensionCheck() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="comp-wrapper">
+          <div class="comp-header">
+            Please answer the following questions about the main task, so we know that
+            you understand the instructions.
+          </div>
+          <div id="comp-error" class="comp-error" style="display: none;"></div>
+          <div class="comp-card">
+            <div class="comp-question">
+              You will have full visibility of the maze and your partner at all times.
+            </div>
+            <div class="comp-asterisk">*</div>
+            <div class="radio-group">
+              <label><input type="radio" name="comp_q1" value="True" /> True</label>
+              <label><input type="radio" name="comp_q1" value="False" /> False</label>
+            </div>
+          </div>
+          <div class="comp-card">
+            <div class="comp-question">
+              Your partner stays completely still while only you move to find them.
+            </div>
+            <div class="comp-asterisk">*</div>
+            <div class="radio-group">
+              <label><input type="radio" name="comp_q2" value="True" /> True</label>
+              <label><input type="radio" name="comp_q2" value="False" /> False</label>
+            </div>
+          </div>
+          <div class="comp-card">
+            <div class="comp-question">
+              A maze finishes as soon as you and your partner meet on the exact same spot.
+            </div>
+            <div class="comp-asterisk">*</div>
+            <div class="radio-group">
+              <label><input type="radio" name="comp_q3" value="True" /> True</label>
+              <label><input type="radio" name="comp_q3" value="False" /> False</label>
+            </div>
+          </div>
+          <button type="button" class="btn-continue" onclick="submitComprehensionCheck()">Continue</button>
+        </div>
+      `;
+      }
+
+      function submitComprehensionCheck() {
+        const q1 = document.querySelector(
+          'input[name="comp_q1"]:checked'
+        )?.value;
+        const q2 = document.querySelector(
+          'input[name="comp_q2"]:checked'
+        )?.value;
+        const q3 = document.querySelector(
+          'input[name="comp_q3"]:checked'
+        )?.value;
+        const err = document.getElementById("comp-error");
+        const correctQ1 = getVisMode(cond) === "full_vis" ? "True" : "False";
+
+        if (!q1 || !q2 || !q3) {
+          err.textContent =
+            "Please answer all three questions before continuing.";
+          err.style.display = "block";
+          return;
+        }
+        if (q1 !== correctQ1 || q2 !== "False" || q3 !== "True") {
+          err.textContent =
+            "One or more answers are incorrect. Please review the statements carefully and try again.";
+          err.style.display = "block";
+          return;
+        }
+        advanceStep();
       }
 
       function renderPartnerFeedback() {
