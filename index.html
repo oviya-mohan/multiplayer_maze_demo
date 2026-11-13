@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multiplayer Maze Experiment — Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0 16px 40px 16px;
+        background: #ffffff;
+        color: #111111;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+
+      /* --- TOP DEMO NAV BAR --- */
+      .demo-nav {
+        display: none;
+        max-width: 1080px;
+        margin: 10px auto 14px auto;
+        padding: 8px 14px;
+        background: #f4f7f2;
+        border: 1px solid #cbd5c0;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #2d4222;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .demo-nav-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .demo-nav-btn {
+        padding: 5px 10px;
+        border: 1px solid #8cc268;
+        border-radius: 4px;
+        background: #ffffff;
+        color: #1e2e16;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .demo-nav-btn:hover {
+        background: #eaf5de;
+      }
+
+      /* --- LAUNCHER (OTREE DEMO STYLE) --- */
+      .launcher-wrapper {
+        max-width: 780px;
+        margin: 40px auto;
+      }
+
+      .launcher-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .launcher-sub {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .cond-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .cond-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: #fafbfc;
+        transition: border-color 0.15s, background 0.15s;
+      }
+
+      .cond-card:hover {
+        border-color: #528c34;
+        background: #f6fbf0;
+      }
+
+      .cond-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111;
+      }
+
+      .cond-meta {
+        font-size: 13px;
+        color: #666;
+        margin-top: 2px;
+      }
+
+      .cond-launch-btn {
+        padding: 8px 18px;
+        background: #528c34;
+        color: #ffffff;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .cond-launch-btn:hover {
+        background: #3e6e25;
+      }
+
+      /* --- INSTRUCTION PAGES --- */
+      .inst-wrapper {
+        max-width: 820px;
+        margin: 24px auto;
+        text-align: center;
+        color: #111;
+      }
+
+      .inst-header {
+        font-size: 30px;
+        font-weight: 600;
+        margin-bottom: 18px;
+      }
+
+      .inst-text {
+        font-size: 19px;
+        line-height: 1.5;
+        margin-bottom: 18px;
+      }
+
+      .preview-box {
+        display: inline-block;
+        border: 2px solid #333;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        background-color: #000;
+        line-height: 0;
+        margin: 10px auto 16px auto;
+      }
+
+      .preview-box canvas {
+        display: block;
+      }
+
+      .btn-continue {
+        margin-top: 16px;
+        padding: 10px 26px;
+        background: #fff;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        font-size: 17px;
+        color: #333;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn-continue:hover {
+        background: #f0f0f0;
+        border-color: #888;
+      }
+
+      .inline-avatar {
+        display: inline-block;
+        position: relative;
+        width: 48px;
+        height: 48px;
+        vertical-align: middle;
+        margin: 0 4px;
+        transform: scale(1.1);
+        image-rendering: pixelated;
+      }
+
+      .inline-avatar-base {
+        position: absolute;
+        bottom: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .inline-avatar-sprite {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 48px;
+        height: 48px;
+        background-image: url("./assets/mazes/Basic_Charakter_Spritesheet.png");
+        background-position: 0 0;
+        background-repeat: no-repeat;
+      }
+
+      .inline-mushroom {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        background-image: url("./assets/mazes/Basic_Grass_Biom_things.png");
+        background-position: -96px 0;
+        background-repeat: no-repeat;
+        vertical-align: middle;
+        transform: scale(1.8);
+        margin: 0 8px;
+        image-rendering: pixelated;
+      }
+
+      /* --- GAME & CHAT LAYOUT --- */
+      .page-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 10px;
+        font-family: "Consolas", "Monaco", monospace;
+      }
+
+      .task-container {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #game-container {
+        border: 2px solid #333;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      #game-container canvas {
+        display: block;
+      }
+
+      .info-box {
+        background: #eaf5de;
+        color: #1e2e16;
+        border: 2px solid #528c34;
+        border-radius: 6px;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 220px;
+        margin-bottom: 15px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+
+      .info-label {
+        color: #46782c;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 14px;
+      }
+
+      .info-value {
+        font-weight: bold;
+        font-size: 18px;
+        color: #1e2e16;
+      }
+
+      .chat-container,
+      .chat-container * {
+        box-sizing: border-box;
+      }
+
+      .chat-container {
+        width: 420px;
+        height: 600px;
+        display: flex;
+        flex-direction: column;
+        border: 3px solid #528c34;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #eaf5de;
+        box-shadow: 0 4px 12px rgba(45, 74, 34, 0.15);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      @keyframes incomingPulse {
+        0% {
+          border-color: #f59e0b;
+          box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.75);
+        }
+        50% {
+          border-color: #fbbf24;
+          box-shadow: 0 0 18px 6px rgba(245, 158, 11, 0.55);
+        }
+        100% {
+          border-color: #528c34;
+          box-shadow: 0 4px 12px rgba(45, 74, 34, 0.15);
+        }
+      }
+
+      .chat-container.pulse-incoming {
+        animation: incomingPulse 1.1s ease-out;
+      }
+
+      .chat-header {
+        background: #528c34;
+        color: #ffffff;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .chat-status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #a3e635;
+        display: inline-block;
+      }
+
+      #chat-log {
+        flex-grow: 1;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: #eaf5de;
+        color: #1e2e16;
+        padding: 12px;
+        font-size: 15px;
+      }
+
+      .chat-message {
+        margin-bottom: 8px;
+        line-height: 1.4;
+        font-size: 15px;
+        word-break: break-word;
+        white-space: pre-wrap;
+      }
+
+      .msg-p1 {
+        color: #005bb5;
+        font-weight: bold;
+      }
+      .msg-p2 {
+        color: #c25900;
+        font-weight: bold;
+      }
+
+      .chat-input-row {
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        border-top: 2px solid #7ab556;
+      }
+
+      #chat-input {
+        flex-grow: 1;
+        width: 100%;
+        padding: 10px 12px;
+        background: #f7fcf2;
+        color: #1e2e16;
+        border: none;
+        outline: none;
+        font-family: inherit;
+        font-size: 14px;
+        resize: none;
+        overflow-y: hidden;
+        min-height: 44px;
+        max-height: 120px;
+      }
+
+      #chat-input:focus {
+        background: #ffffff;
+      }
+
+      #chat-send {
+        background: #528c34;
+        color: #ffffff;
+        border: none;
+        border-left: 2px solid #7ab556;
+        padding: 0 15px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+
+      #chat-send:hover {
+        background: #3e6e25;
+      }
+
+      .feedback-textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px 14px;
+        font-size: 16px;
+        font-family: inherit;
+        border: 1px solid #bbb;
+        border-radius: 6px;
+        resize: vertical;
+        box-sizing: border-box;
+        margin-bottom: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Discreet Demo Navigation Bar -->
+    <div class="demo-nav" id="demo-nav">
+      <div id="demo-status">Condition: —</div>
+      <div class="demo-nav-actions">
+        <button type="button" class="demo-nav-btn" onclick="goToLauncher()">
+          All 8 Conditions
+        </button>
+        <button
+          type="button"
+          class="demo-nav-btn"
+          onclick="jumpToStage('solo_target', 0)"
+        >
+          Jump to Solo Mazes (1/6)
+        </button>
+        <button
+          type="button"
+          class="demo-nav-btn"
+          onclick="jumpToStage('main_instructions', 0)"
+        >
+          Jump to Main Task (1/12)
+        </button>
+        <button type="button" class="demo-nav-btn" onclick="advanceStep()">
+          Skip Current Step &rarr;
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Mount -->
+    <div id="app-root"></div>
+
+    <script>
+      // =========================================================================
+      // 1. EXACT SETTINGS FROM settings.py
+      // =========================================================================
+      const PRACTICE_MAZES = [
+        { logic: "half_6.json", tiled: "half_6_TILED.json" },
+        { logic: "quad_1.json", tiled: "quad_1_TILED.json" },
+        { logic: "full_4.json", tiled: "full_4_TILED.json" },
+        { logic: "half_5.json", tiled: "half_5_TILED.json" },
+        { logic: "quad_4.json", tiled: "quad_4_TILED.json" },
+        { logic: "full_6.json", tiled: "full_6_TILED.json" },
+      ];
+
+      const MAZE_SEQUENCE = [
+        "full_1.json",
+        "full_2.json",
+        "full_3.json",
+        "full_5.json",
+        "half_1.json",
+        "half_2.json",
+        "half_3.json",
+        "half_4.json",
+        "quad_2.json",
+        "quad_3.json",
+        "quad_5.json",
+        "quad_6.json",
+      ];
+
+      const CONDITIONS = [
+        {
+          name: "no_fog",
+          label: "Demo 1: Full visibility",
+          vision_radius: 15,
+          use_haze: false,
+          constrained_camera: false,
+          chat_enabled: true,
+        },
+        {
+          name: "fog_of_war",
+          label: "Demo 2: 3x3 fog of war",
+          vision_radius: 1,
+          use_haze: false,
+          constrained_camera: false,
+          chat_enabled: true,
+        },
+        {
+          name: "fog_of_war_haze",
+          label: "Demo 3: Hazy fog of war (3 x 3)",
+          vision_radius: 1,
+          use_haze: true,
+          constrained_camera: false,
+          chat_enabled: true,
+        },
+        {
+          name: "constrained_fog_of_war",
+          label: "Demo 4: Constrained fog of war (3 x 3)",
+          vision_radius: 1,
+          use_haze: false,
+          constrained_camera: true,
+          chat_enabled: true,
+        },
+        {
+          name: "no_fog_no_chat",
+          label: "Demo 5: Full visibility without chat",
+          vision_radius: 15,
+          use_haze: false,
+          constrained_camera: false,
+          chat_enabled: false,
+        },
+        {
+          name: "fog_of_war_no_chat",
+          label: "Demo 6: 3x3 fog of war without chat",
+          vision_radius: 1,
+          use_haze: false,
+          constrained_camera: false,
+          chat_enabled: false,
+        },
+        {
+          name: "fog_of_war_haze_no_chat",
+          label: "Demo 7: Hazy fog of war (3 x 3) without chat",
+          vision_radius: 1,
+          use_haze: true,
+          constrained_camera: false,
+          chat_enabled: false,
+        },
+        {
+          name: "constrained_fog_of_war_no_chat",
+          label: "Demo 8: Constrained fog of war (3 x 3) without chat",
+          vision_radius: 1,
+          use_haze: false,
+          constrained_camera: true,
+          chat_enabled: false,
+        },
+      ];
+
+      const nativeTileSize = 16;
+      const renderTileSize = 40;
+      const scaleFactor = renderTileSize / nativeTileSize;
+
+      // =========================================================================
+      // 2. DEMO STATE & CLEANUP
+      // =========================================================================
+      let cond = null;
+      let flowSteps = [];
+      let stepIndex = 0;
+      let activeGame = null;
+      let activeTimers = [];
+      let activeKeyListener = null;
+      let spawnHistory = { quadPairs: [], points: [] };
+
+      function cleanupCurrentView() {
+        activeTimers.forEach((t) => {
+          clearInterval(t);
+          clearTimeout(t);
+        });
+        activeTimers = [];
+        if (activeKeyListener) {
+          document.removeEventListener("keydown", activeKeyListener);
+          activeKeyListener = null;
+        }
+        if (activeGame) {
+          activeGame.destroy(true);
+          activeGame = null;
+        }
+      }
+
+      function shuffle(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      function getVisMode(c) {
+        if (c.constrained_camera) return "constrained_fog";
+        if (c.vision_radius <= 2 && c.use_haze) return "haze_fog";
+        if (c.vision_radius <= 2 && !c.use_haze) return "solid_fog";
+        return "full_vis";
+      }
+
+      // Quadrant-balanced spawning (matches creating_session)
+      function getQuadrant(r, c, mid = 7) {
+        if (r <= mid && c <= mid) return "TL";
+        if (r <= mid && c > mid) return "TR";
+        if (r > mid && c <= mid) return "BL";
+        return "BR";
+      }
+
+      function sampleBalancedPositions(grid, minDist = 10.0) {
+        const floors = [];
+        const byQuad = { TL: [], TR: [], BL: [], BR: [] };
+        for (let r = 0; r < grid.length; r++) {
+          for (let c = 0; c < grid[r].length; c++) {
+            if (grid[r][c] !== 1) {
+              floors.push([r, c]);
+              byQuad[getQuadrant(r, c)].push([r, c]);
+            }
+          }
+        }
+
+        const quadPairs = [
+          ["TL", "BR"],
+          ["BR", "TL"],
+          ["TR", "BL"],
+          ["BL", "TR"],
+          ["TL", "TR"],
+          ["TR", "TL"],
+          ["BL", "BR"],
+          ["BR", "BL"],
+          ["TL", "BL"],
+          ["BL", "TL"],
+          ["TR", "BR"],
+          ["BR", "TR"],
+        ];
+        let remaining = quadPairs.filter(
+          (qp) =>
+            !spawnHistory.quadPairs.some(
+              (u) => u[0] === qp[0] && u[1] === qp[1]
+            )
+        );
+        if (remaining.length === 0) {
+          spawnHistory.quadPairs = [];
+          remaining = [...quadPairs];
+        }
+        remaining = shuffle(remaining);
+
+        for (const [qa, qb] of remaining) {
+          if (!byQuad[qa].length || !byQuad[qb].length) continue;
+          for (let i = 0; i < 300; i++) {
+            const sa =
+              byQuad[qa][Math.floor(Math.random() * byQuad[qa].length)];
+            const sb =
+              byQuad[qb][Math.floor(Math.random() * byQuad[qb].length)];
+            if (Math.hypot(sa[0] - sb[0], sa[1] - sb[1]) >= minDist) {
+              spawnHistory.quadPairs.push([qa, qb]);
+              spawnHistory.points.push(sa, sb);
+              return [sa, sb];
+            }
+          }
+        }
+        return [floors[0], floors[floors.length - 1]];
+      }
+
+      // =========================================================================
+      // 3. LAUNCHER & SEQUENCE BUILDER
+      // =========================================================================
+      function goToLauncher() {
+        cleanupCurrentView();
+        document.getElementById("demo-nav").style.display = "none";
+        const root = document.getElementById("app-root");
+
+        const cardsHtml = CONDITIONS.map(
+          (c, idx) => `
+        <div class="cond-card">
+          <div>
+            <div class="cond-name">${c.label}</div>
+            <div class="cond-meta">
+              Visibility: ${getVisMode(c).replace("_", " ")} &middot;
+              Chat: ${c.chat_enabled ? "Enabled" : "Disabled"} &middot;
+              6 Solo + 12 Paired Mazes
+            </div>
+          </div>
+          <button type="button" class="cond-launch-btn" onclick="startCondition(${idx})">
+            Launch Demo &rarr;
+          </button>
+        </div>`
+        ).join("");
+
+        root.innerHTML = `
+        <div class="launcher-wrapper">
+          <div class="launcher-title">Multiplayer Maze Coordination — Interactive Demo</div>
+          <p class="launcher-sub">
+            Select any of the 8 experimental conditions below to preview the full participant experience
+            (Phase 1 Solo Explore, 6 Solo Mushroom Mazes, Phase 3 Chat/Partner Explore, and 12 Main Rendezvous Mazes
+            with a simulated partner).
+          </p>
+          <div class="cond-list">${cardsHtml}</div>
+        </div>
+      `;
+      }
+
+      function startCondition(condIdx) {
+        cond = CONDITIONS[condIdx];
+        spawnHistory = { quadPairs: [], points: [] };
+
+        const soloSeq = shuffle(PRACTICE_MAZES);
+        const mainSeq = shuffle(MAZE_SEQUENCE);
+
+        flowSteps = [
+          { type: "phase1_inst", label: "Phase 1 Instructions" },
+          { type: "solo_explore", label: "Solo Empty Explore (30s)" },
+          { type: "phase2_inst", label: "Phase 2 Instructions" },
+          ...soloSeq.map((m, i) => ({
+            type: "solo_target",
+            maze: m,
+            idx: i + 1,
+            total: soloSeq.length,
+            label: `Solo Mushroom Maze ${i + 1}/6`,
+          })),
+          { type: "phase3_inst", label: "Phase 3 Instructions" },
+          ...(cond.chat_enabled
+            ? [{ type: "chat_practice", label: "Chat Practice (30s)" }]
+            : []),
+          { type: "partner_explore", label: "Partner Explore (30s)" },
+          { type: "main_instructions", label: "Main Task Instructions" },
+          ...mainSeq.map((m, i) => ({
+            type: "rendezvous_task",
+            mazeFile: m,
+            idx: i + 1,
+            total: mainSeq.length,
+            label: `Main Rendezvous Maze ${i + 1}/12`,
+          })),
+          { type: "partner_feedback", label: "Partner Impression" },
+          { type: "thank_you", label: "Thank You" },
+        ];
+
+        stepIndex = 0;
+        document.getElementById("demo-nav").style.display = "flex";
+        renderCurrentStep();
+      }
+
+      function advanceStep() {
+        if (stepIndex < flowSteps.length - 1) {
+          stepIndex++;
+          renderCurrentStep();
+        } else {
+          goToLauncher();
+        }
+      }
+
+      function jumpToStage(stepType) {
+        const idx = flowSteps.findIndex((s) => s.type === stepType);
+        if (idx !== -1) {
+          stepIndex = idx;
+          renderCurrentStep();
+        }
+      }
+
+      function renderCurrentStep() {
+        cleanupCurrentView();
+        const step = flowSteps[stepIndex];
+        document.getElementById(
+          "demo-status"
+        ).innerHTML = `<strong>${cond.label}</strong> &mdash; ${step.label}`;
+
+        if (step.type === "phase1_inst") renderPhase1Instructions();
+        else if (step.type === "solo_explore") renderSoloExplore();
+        else if (step.type === "phase2_inst") renderPhase2Instructions();
+        else if (step.type === "solo_target") renderSoloTargetMaze(step);
+        else if (step.type === "phase3_inst") renderPhase3Instructions();
+        else if (step.type === "chat_practice") renderChatPractice();
+        else if (step.type === "partner_explore") renderPartnerExplore();
+        else if (step.type === "main_instructions") renderMainInstructions();
+        else if (step.type === "rendezvous_task") renderRendezvousTask(step);
+        else if (step.type === "partner_feedback") renderPartnerFeedback();
+        else if (step.type === "thank_you") renderThankYou();
+      }
+
+      // =========================================================================
+      // 4. INSTRUCTION & FEEDBACK SCREENS
+      // =========================================================================
+      function renderPhase1Instructions() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="inst-wrapper">
+          <p class="inst-text">
+            Welcome! In this game, you will navigate a character through a series of unfamiliar mazes.
+          </p>
+          <p class="inst-text">
+            Your character
+            <span class="inline-avatar">
+              <span class="inline-avatar-base" style="background-color: #0066cc;"></span>
+              <span class="inline-avatar-sprite"></span>
+            </span>
+            is identified by the colored circle underneath their feet.
+          </p>
+          <div class="preview-box" id="preview-container"></div>
+          <p class="inst-text">
+            To start, you will have <strong>30 seconds</strong> to explore a practice maze by yourself
+            to get a feel for moving around. Use the <strong>arrow keys</strong> on your keyboard to walk around.
+          </p>
+          <p class="inst-text">
+            Keep in mind that in the upcoming practice and main rounds,
+            <strong>each round will have a new, different maze layout</strong>.
+          </p>
+          <button type="button" class="btn-continue" onclick="advanceStep()">Start</button>
+        </div>
+      `;
+        mountPreviewScene("preview-container", false, false);
+      }
+
+      function renderPhase2Instructions() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="inst-wrapper">
+          <div class="inst-header">Solo Target Practice</div>
+          <p class="inst-text">
+            Next, you will complete <strong>6 solo mazes</strong>. In each maze, your goal is to find
+            the red mushroom <span class="inline-mushroom"></span> as quickly as possible.
+          </p>
+          <p class="inst-text">
+            This will help you get used to the visibility conditions before you play with your partner.
+          </p>
+          <button type="button" class="btn-continue" onclick="advanceStep()">Continue</button>
+        </div>
+      `;
+      }
+
+      function renderPhase3Instructions() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="inst-wrapper">
+          <p class="inst-text">
+            Next, you
+            <span class="inline-avatar">
+              <span class="inline-avatar-base" style="background-color: #0066cc;"></span>
+              <span class="inline-avatar-sprite"></span>
+            </span>
+            and your partner
+            <span class="inline-avatar">
+              <span class="inline-avatar-base" style="background-color: #cc6600;"></span>
+              <span class="inline-avatar-sprite"></span>
+            </span>
+            will have a chance to explore a practice maze together for <strong>30 seconds</strong>.
+          </p>
+          <div class="preview-box" id="preview-container"></div>
+          <p class="inst-text">
+            <strong>Both of you can move around freely.</strong> Walk around and get used to seeing your partner
+            navigate the maze!
+          </p>
+          ${
+            cond.chat_enabled
+              ? `
+          <p class="inst-text">
+            Before exploring the maze together, you and your partner will first get
+            <strong>30 seconds</strong> with a chat box screen to practice using it.
+            Just <strong>start typing anytime</strong> (or click the box) to write a message,
+            and hit <strong>Enter</strong> or click <strong>Send</strong> to send it.
+          </p>`
+              : ""
+          }
+          <p class="inst-text">
+            Remember that in the main task that follows,
+            <strong>each round will take place in a new, different maze layout</strong>.
+          </p>
+          <button type="button" class="btn-continue" onclick="advanceStep()">Join partner</button>
+        </div>
+      `;
+        mountPreviewScene("preview-container", true, false);
+      }
+
+      function renderMainInstructions() {
+        const visMode = getVisMode(cond);
+        let visHtml = "";
+        if (visMode === "full_vis") {
+          visHtml = `<p class="inst-text"><strong>☀️ It's a sunny day!</strong><br /><b>You and your partner</b> will both be able to see the entire maze.</p>`;
+        } else if (visMode === "solid_fog") {
+          visHtml = `<p class="inst-text"><strong>🌑 There is a dense fog!</strong><br /><b>You and your partner</b> can only see a small 3x3 window around yourselves. Everything else is completely dark.</p>`;
+        } else if (visMode === "haze_fog") {
+          visHtml = `<p class="inst-text"><strong>🌫️ There is a hazy fog!</strong><br />A misty haze covers the maze outside your immediate area. <b>You and your partner</b> can only see clearly within your own 3x3 window and will only be able to see each other once inside this clear area.</p>`;
+        } else {
+          visHtml = `<p class="inst-text"><strong>🔦 It is dark outside but you have a flashlight!</strong><br /><b>You and your partner</b> each have a view zoomed in to a small 3x3 window that follows your own character.</p>`;
+        }
+
+        document.getElementById("app-root").innerHTML = `
+        <div class="inst-wrapper">
+          <div class="inst-header">Great work!</div>
+          <p class="inst-text">
+            Now that you have a sense for how to navigate these mazes with your partner,
+            we will move on to the main task. Your goal is to find your partner and meet
+            at the same spot <b>as quickly as possible</b>.
+          </p>
+          ${visHtml}
+          <div class="preview-box" id="main-preview-container"></div>
+          <p class="inst-text">A <strong>timer</strong> will track your performance on each maze.</p>
+          ${
+            cond.chat_enabled
+              ? `<p class="inst-text">You can use the <strong>chat box</strong> to send messages to your partner whenever you need to.</p>`
+              : ""
+          }
+          <p class="inst-text">You will complete <strong>12 mazes</strong> in total.</p>
+          <button type="button" class="btn-continue" onclick="advanceStep()">Continue</button>
+        </div>
+      `;
+        mountPreviewScene("main-preview-container", true, true);
+      }
+
+      function renderPartnerFeedback() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="inst-wrapper" style="max-width: 720px; margin-top: 40px;">
+          <div class="inst-header">Final Question</div>
+          <p class="inst-text">
+            Before finishing, please write a brief note (1–3 sentences) sharing your
+            impression of your partner during the task
+            ${
+              cond.chat_enabled
+                ? "(for example, how they navigated, communicated, or coordinated with you)."
+                : "(for example, how they navigated or coordinated with you)."
+            }
+          </p>
+          <textarea class="feedback-textarea" placeholder="Write your impression here..."></textarea>
+          <div>
+            <button type="button" class="btn-continue" onclick="advanceStep()">Continue</button>
+          </div>
+        </div>
+      `;
+      }
+
+      function renderThankYou() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="inst-wrapper" style="margin-top: 50px;">
+          <div class="inst-header">Demo Complete!</div>
+          <p class="inst-text">
+            You've completed the full sequence for <strong>${cond.label}</strong>.
+          </p>
+          <button type="button" class="cond-launch-btn" onclick="goToLauncher()">
+            Return to All 8 Conditions
+          </button>
+        </div>
+      `;
+      }
+
+      function mountPreviewScene(parentId, showPartner, applyFog) {
+        const gridSize = 15;
+        const tileSize = cond.constrained_camera && applyFog ? 40 : 32;
+        const scale = tileSize / 16;
+        const visMode = getVisMode(cond);
+
+        class PreviewScene extends Phaser.Scene {
+          preload() {
+            this.load.tilemapTiledJSON(
+              "empty_map",
+              "./assets/mazes/example_TILED.json"
+            );
+            this.load.image(
+              "img_grass",
+              "./assets/mazes/sproutlands_grass.png"
+            );
+            this.load.image(
+              "img_fences",
+              "./assets/mazes/sproutlands_fences.png"
+            );
+            this.load.spritesheet(
+              "avatar",
+              "./assets/mazes/Basic_Charakter_Spritesheet.png",
+              { frameWidth: 48, frameHeight: 48 }
+            );
+          }
+          create() {
+            const map = this.make.tilemap({ key: "empty_map" });
+            const ts = [
+              map.addTilesetImage("sproutlands_grass", "img_grass"),
+              map.addTilesetImage("sproutlands_fences", "img_fences"),
+            ];
+            map.createLayer("Floor", ts, 0, 0).setScale(scale);
+            map.createLayer("Wall", ts, 0, 0).setScale(scale);
+
+            const myX = 7 * tileSize + tileSize / 2;
+            const myY = 7 * tileSize + tileSize / 2;
+            this.add.container(myX, myY, [
+              this.add.ellipse(0, 10, 18, 9, 0x0066cc),
+              this.add.sprite(0, -2, "avatar", 0).setScale(1.2),
+            ]);
+
+            if (showPartner) {
+              const pCont = this.add.container(
+                8 * tileSize + tileSize / 2,
+                8 * tileSize + tileSize / 2,
+                [
+                  this.add.ellipse(0, 10, 18, 9, 0xcc6600),
+                  this.add.sprite(0, -2, "avatar", 0).setScale(1.2),
+                ]
+              );
+              if (applyFog && visMode === "solid_fog") pCont.setVisible(true);
+            }
+
+            if (
+              applyFog &&
+              !cond.constrained_camera &&
+              visMode !== "full_vis"
+            ) {
+              const fog = this.add.graphics();
+              fog.fillStyle(0x000000, cond.use_haze ? 0.6 : 1.0);
+              const R = cond.vision_radius * tileSize + tileSize / 2;
+              fog.fillRect(0, 0, gridSize * tileSize, myY - R);
+              fog.fillRect(
+                0,
+                myY + R,
+                gridSize * tileSize,
+                gridSize * tileSize - (myY + R)
+              );
+              fog.fillRect(0, myY - R, myX - R, R * 2);
+              fog.fillRect(
+                myX + R,
+                myY - R,
+                gridSize * tileSize - (myX + R),
+                R * 2
+              );
+              fog.setDepth(100);
+            }
+            if (applyFog && cond.constrained_camera) {
+              this.cameras.main.centerOn(myX, myY);
+            }
+          }
+        }
+
+        const dim =
+          applyFog && cond.constrained_camera
+            ? (cond.vision_radius * 2 + 1) * tileSize
+            : gridSize * tileSize;
+        activeGame = new Phaser.Game({
+          type: Phaser.AUTO,
+          width: dim,
+          height: dim,
+          parent: parentId,
+          backgroundColor: "#000000",
+          pixelArt: true,
+          antialias: false,
+          roundPixels: true,
+          scene: PreviewScene,
+        });
+      }
+
+      // =========================================================================
+      // 5. CHAT PRACTICE (30s)
+      // =========================================================================
+      function renderChatPractice() {
+        document.getElementById("app-root").innerHTML = `
+        <div class="page-wrapper" style="max-width: 520px; margin: 25px auto;">
+          <div style="font-family: sans-serif; text-align: center; margin-bottom: 14px;">
+            <h2 style="margin: 0 0 6px 0;">Chat Practice (30 seconds)</h2>
+            <p style="margin: 0; color: #3d5233;">Say hello and practice using the chat box with your partner before entering the maze.</p>
+          </div>
+          <div class="info-box">
+            <span class="info-label">Time Left</span>
+            <span class="info-value" id="timer-display">00:30</span>
+          </div>
+          <div class="chat-container" id="chat-container" style="width: 100%; height: 380px;">
+            <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
+            <div id="chat-log"></div>
+            <div class="chat-input-row">
+              <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
+              <button type="button" id="chat-send">Send</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+        let rem = 30;
+        activeTimers.push(
+          setInterval(() => {
+            rem = Math.max(0, rem - 1);
+            document.getElementById("timer-display").innerText = `00:${String(
+              rem
+            ).padStart(2, "0")}`;
+            if (rem <= 0) advanceStep();
+          }, 1000)
+        );
+
+        setupChatListeners(
+          (msg) => {
+            appendChatMessage(1, msg);
+            activeTimers.push(
+              setTimeout(() => {
+                appendChatMessage(
+                  2,
+                  "Hi! Ready to test the maze when you are."
+                );
+              }, 900)
+            );
+          },
+          () => true,
+          null
+        );
+      }
+
+      // =========================================================================
+      // 6. PLAYABLE MAZE MODES (SOLO EXPLORE, SOLO TARGET, PARTNER EXPLORE, MAIN)
+      // =========================================================================
+      async function renderSoloExplore() {
+        await runPlayableMaze({
+          mode: "solo_explore",
+          mazeFile: "example.json",
+          tiledFile: "example_TILED.json",
+          countdownSecs: 30,
+          applyFog: false,
+          showPartner: false,
+        });
+      }
+
+      async function renderSoloTargetMaze(step) {
+        await runPlayableMaze({
+          mode: "solo_target",
+          mazeFile: step.maze.logic,
+          tiledFile: step.maze.tiled,
+          titleHtml: `<div style="text-align:center;font-size:26px;font-weight:bold;margin-bottom:10px;font-family:sans-serif;">Find the <span style="color:#c83e2b">mushroom</span><span class="inline-mushroom"></span>! (${step.idx}/${step.total})</div>`,
+          applyFog: true,
+          showPartner: false,
+        });
+      }
+
+      async function renderPartnerExplore() {
+        await runPlayableMaze({
+          mode: "partner_explore",
+          mazeFile: "example.json",
+          tiledFile: "example_TILED.json",
+          countdownSecs: 30,
+          applyFog: false,
+          showPartner: true,
+        });
+      }
+
+      async function renderRendezvousTask(step) {
+        await runPlayableMaze({
+          mode: "rendezvous",
+          mazeFile: step.mazeFile,
+          tiledFile: step.mazeFile.replace(".json", "_TILED.json"),
+          applyFog: true,
+          showPartner: true,
+        });
+      }
+
+      async function runPlayableMaze(opts) {
+        const res = await fetch(`./assets/mazes/${opts.mazeFile}`);
+        const mazeData = await res.json();
+        const maze = mazeData.grid;
+        const gridSize = maze.length;
+        const [sa, sb] = sampleBalancedPositions(maze, 10.0);
+
+        let p1 = { r: sa[0], c: sa[1], sprite: null };
+        let p2 = { r: sb[0], c: sb[1], sprite: null };
+        let goalCoord = sb;
+        let taskActive = true;
+        let isMoving = false;
+        let queuedMove = null;
+        let startTime = Date.now();
+        let botTarget = findNearestFloor(
+          maze,
+          Math.floor(gridSize / 2),
+          Math.floor(gridSize / 2)
+        );
+
+        const useChat = opts.showPartner && cond.chat_enabled;
+        const useConstrained = opts.applyFog && cond.constrained_camera;
+        const canvasDim = useConstrained
+          ? (cond.vision_radius * 2 + 1) * renderTileSize
+          : gridSize * renderTileSize;
+
+        document.getElementById("app-root").innerHTML = `
+        <div class="page-wrapper">
+          ${opts.titleHtml || ""}
+          <div class="info-box" id="timer-box">
+            <span class="info-label">${
+              opts.countdownSecs ? "Time Left" : "Time"
+            }</span>
+            <span class="info-value" id="timer-display">${
+              opts.countdownSecs ? "00:30" : "00:00"
+            }</span>
+          </div>
+          <div class="task-container">
+            ${
+              useChat
+                ? `
+              <div class="chat-container" id="chat-container" style="height: ${Math.max(
+                canvasDim,
+                360
+              )}px;">
+                <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
+                <div id="chat-log"></div>
+                <div class="chat-input-row">
+                  <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
+                  <button type="button" id="chat-send">Send</button>
+                </div>
+              </div>`
+                : ""
+            }
+            <div id="game-container"></div>
+          </div>
+        </div>
+      `;
+
+        let rem = opts.countdownSecs || 0;
+        activeTimers.push(
+          setInterval(() => {
+            if (!taskActive) return;
+            if (opts.countdownSecs) {
+              rem = Math.max(0, rem - 1);
+              document.getElementById("timer-display").innerText = `00:${String(
+                rem
+              ).padStart(2, "0")}`;
+              if (rem <= 0) {
+                taskActive = false;
+                advanceStep();
+              }
+            } else {
+              const secs = Math.floor((Date.now() - startTime) / 1000);
+              document.getElementById("timer-display").innerText = `${String(
+                Math.floor(secs / 60)
+              ).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
+            }
+          }, 1000)
+        );
+
+        let fogGraphics = null;
+        let goalSprite = null;
+
+        class PlayScene extends Phaser.Scene {
+          preload() {
+            this.load.tilemapTiledJSON(
+              "tiled_map",
+              `./assets/mazes/${opts.tiledFile}`
+            );
+            this.load.image(
+              "img_grass",
+              "./assets/mazes/sproutlands_grass.png"
+            );
+            this.load.image(
+              "img_fences",
+              "./assets/mazes/sproutlands_fences.png"
+            );
+            this.load.spritesheet(
+              "avatar",
+              "./assets/mazes/Basic_Charakter_Spritesheet.png",
+              { frameWidth: 48, frameHeight: 48 }
+            );
+            if (opts.mode === "solo_target") {
+              this.load.spritesheet(
+                "things",
+                "./assets/mazes/Basic_Grass_Biom_things.png",
+                { frameWidth: 16, frameHeight: 16 }
+              );
+            }
+          }
+
+          create() {
+            const map = this.make.tilemap({ key: "tiled_map" });
+            const ts = [
+              map.addTilesetImage("sproutlands_grass", "img_grass"),
+              map.addTilesetImage("sproutlands_fences", "img_fences"),
+            ];
+            map.createLayer("Floor", ts, 0, 0).setScale(scaleFactor);
+            map.createLayer("Wall", ts, 0, 0).setScale(scaleFactor);
+
+            this.anims.create({
+              key: "walk-down",
+              frames: this.anims.generateFrameNumbers("avatar", {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 20,
+              repeat: -1,
+            });
+            this.anims.create({
+              key: "walk-up",
+              frames: this.anims.generateFrameNumbers("avatar", {
+                start: 4,
+                end: 7,
+              }),
+              frameRate: 20,
+              repeat: -1,
+            });
+            this.anims.create({
+              key: "walk-left",
+              frames: this.anims.generateFrameNumbers("avatar", {
+                start: 8,
+                end: 11,
+              }),
+              frameRate: 20,
+              repeat: -1,
+            });
+            this.anims.create({
+              key: "walk-right",
+              frames: this.anims.generateFrameNumbers("avatar", {
+                start: 12,
+                end: 15,
+              }),
+              frameRate: 20,
+              repeat: -1,
+            });
+
+            p1.sprite = this.add.container(
+              p1.c * renderTileSize + renderTileSize / 2,
+              p1.r * renderTileSize + renderTileSize / 2,
+              [
+                this.add.ellipse(0, 10, 20, 10, 0x0066cc),
+                this.add.sprite(0, -4, "avatar").setScale(1.5),
+              ]
+            );
+
+            if (opts.mode === "solo_target") {
+              goalSprite = this.add
+                .sprite(
+                  goalCoord[1] * renderTileSize + renderTileSize / 2,
+                  goalCoord[0] * renderTileSize + renderTileSize / 2,
+                  "things",
+                  6
+                )
+                .setScale(scaleFactor);
+              this.tweens.add({
+                targets: goalSprite,
+                scale: scaleFactor * 1.15,
+                duration: 800,
+                yoyo: true,
+                repeat: -1,
+              });
+            }
+
+            if (opts.showPartner) {
+              p2.sprite = this.add.container(
+                p2.c * renderTileSize + renderTileSize / 2,
+                p2.r * renderTileSize + renderTileSize / 2,
+                [
+                  this.add.ellipse(0, 10, 20, 10, 0xcc6600),
+                  this.add.sprite(0, -4, "avatar").setScale(1.5),
+                ]
+              );
+            }
+
+            if (opts.applyFog && cond.vision_radius <= 2 && !useConstrained) {
+              fogGraphics = this.add.graphics();
+              fogGraphics.fillStyle(0x000000, cond.use_haze ? 0.6 : 1.0);
+              const R =
+                cond.vision_radius * renderTileSize + renderTileSize / 2;
+              fogGraphics.fillRect(-4000, -4000, 8000, 4000 - R);
+              fogGraphics.fillRect(-4000, R, 8000, 4000 - R);
+              fogGraphics.fillRect(-4000, -R, 4000 - R, R * 2);
+              fogGraphics.fillRect(R, -R, 4000 - R, R * 2);
+              fogGraphics.setDepth(100);
+            }
+
+            if (useConstrained) {
+              this.cameras.main.startFollow(p1.sprite, true, 1, 1);
+              this.cameras.main.setBackgroundColor("#000000");
+              this.cameras.main.setBounds(
+                0,
+                0,
+                gridSize * renderTileSize,
+                gridSize * renderTileSize
+              );
+            }
+
+            this.input.keyboard.on("keydown", this.handleInput, this);
+          }
+
+          handleInput(event) {
+            if (
+              ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
+                event.key
+              )
+            ) {
+              event.preventDefault();
+            } else return;
+
+            if (!taskActive || event.repeat) return;
+            if (
+              document.activeElement &&
+              document.activeElement.id === "chat-input"
+            )
+              return;
+            if (isMoving) {
+              queuedMove = event.key;
+              return;
+            }
+
+            let dr = 0,
+              dc = 0;
+            if (event.key === "ArrowUp") dr = -1;
+            else if (event.key === "ArrowDown") dr = 1;
+            else if (event.key === "ArrowLeft") dc = -1;
+            else if (event.key === "ArrowRight") dc = 1;
+
+            const nr = p1.r + dr,
+              nc = p1.c + dc;
+            if (
+              nr >= 0 &&
+              nr < gridSize &&
+              nc >= 0 &&
+              nc < gridSize &&
+              maze[nr][nc] !== 1
+            ) {
+              isMoving = true;
+              moveEntity(this, 1, nr, nc);
+            }
+          }
+
+          update() {
+            if (fogGraphics && p1.sprite) {
+              fogGraphics.x = p1.sprite.x;
+              fogGraphics.y = p1.sprite.y;
+            }
+            if (goalSprite && opts.applyFog && cond.vision_radius <= 2) {
+              const dist = Math.max(
+                Math.abs(goalCoord[0] - p1.r),
+                Math.abs(goalCoord[1] - p1.c)
+              );
+              goalSprite.setVisible(dist <= cond.vision_radius);
+            }
+            if (
+              opts.showPartner &&
+              p2.sprite &&
+              opts.applyFog &&
+              cond.vision_radius <= 2
+            ) {
+              const maxD = Math.max(
+                Math.abs(p2.sprite.x - p1.sprite.x),
+                Math.abs(p2.sprite.y - p1.sprite.y)
+              );
+              const fadeStart = cond.vision_radius * renderTileSize;
+              const fadeEnd = fadeStart + renderTileSize / 2;
+              p2.sprite.setAlpha(
+                Phaser.Math.Clamp(
+                  1 - (maxD - fadeStart) / (fadeEnd - fadeStart),
+                  0,
+                  1
+                )
+              );
+            }
+          }
+        }
+
+        function moveEntity(scene, sender, nr, nc) {
+          if (!taskActive) return;
+          const player = sender === 1 ? p1 : p2;
+          const dx = nc - player.c;
+          const dy = nr - player.r;
+          player.r = nr;
+          player.c = nc;
+
+          const isWin =
+            (opts.mode === "solo_target" &&
+              p1.r === goalCoord[0] &&
+              p1.c === goalCoord[1]) ||
+            (opts.mode === "rendezvous" && p1.r === p2.r && p1.c === p2.c);
+
+          let targetX = nc * renderTileSize + renderTileSize / 2;
+          let targetY = nr * renderTileSize + renderTileSize / 2;
+          const avatar = player.sprite.list[1];
+
+          if (dx === 1) avatar.play("walk-right", true);
+          else if (dx === -1) avatar.play("walk-left", true);
+          else if (dy === 1) avatar.play("walk-down", true);
+          else if (dy === -1) avatar.play("walk-up", true);
+
+          if (isWin && opts.mode === "rendezvous") {
+            targetX = sender === 1 ? targetX - 6 : targetX + 6;
+            const other = sender === 1 ? p2 : p1;
+            scene.tweens.add({
+              targets: other.sprite,
+              x: sender === 1 ? other.sprite.x + 6 : other.sprite.x - 6,
+              duration: 100,
+            });
+          }
+
+          scene.tweens.add({
+            targets: player.sprite,
+            x: targetX,
+            y: targetY,
+            duration: 200,
+            onComplete: () => {
+              avatar.stop();
+              if (sender === 1) {
+                isMoving = false;
+                if (queuedMove && !isWin) {
+                  const nk = queuedMove;
+                  queuedMove = null;
+                  scene.handleInput({
+                    key: nk,
+                    preventDefault: () => {},
+                    repeat: false,
+                  });
+                }
+              }
+              if (isWin) {
+                taskActive = false;
+                const cam = scene.cameras.main;
+                activeTimers.push(
+                  setTimeout(() => {
+                    scene.add
+                      .rectangle(
+                        cam.midPoint.x,
+                        cam.midPoint.y,
+                        cam.width,
+                        cam.height,
+                        0x000000,
+                        0.7
+                      )
+                      .setDepth(200);
+                    const fSize = Math.max(
+                      14,
+                      Math.min(40, Math.floor(cam.width * 0.15))
+                    );
+                    scene.add
+                      .text(cam.midPoint.x, cam.midPoint.y, "SUCCESS!", {
+                        fontSize: fSize + "px",
+                        fill: "#4ade80",
+                        fontStyle: "bold",
+                        fontFamily: "monospace",
+                      })
+                      .setOrigin(0.5)
+                      .setDepth(200);
+                    activeTimers.push(setTimeout(advanceStep, 1300));
+                  }, 450)
+                );
+              }
+            },
+          });
+        }
+
+        activeGame = new Phaser.Game({
+          type: Phaser.AUTO,
+          width: canvasDim,
+          height: canvasDim,
+          parent: "game-container",
+          backgroundColor: useConstrained ? "#000000" : undefined,
+          pixelArt: true,
+          antialias: false,
+          roundPixels: true,
+          scene: PlayScene,
+        });
+
+        if (opts.showPartner) {
+          activeTimers.push(
+            setInterval(() => {
+              if (!taskActive || !p2.sprite || !activeGame) return;
+              const scene = activeGame.scene.scenes[0];
+              const goal =
+                opts.mode === "rendezvous" &&
+                Math.hypot(p1.r - p2.r, p1.c - p2.c) <= 3
+                  ? [p1.r, p1.c]
+                  : botTarget;
+              const step = nextBfsStep(maze, p2.r, p2.c, goal[0], goal[1]);
+              if (step) moveEntity(scene, 2, step[0], step[1]);
+            }, 650)
+          );
+        }
+
+        if (useChat) {
+          setupChatListeners(
+            (msg) => {
+              appendChatMessage(1, msg);
+              const lower = msg.toLowerCase();
+              let reply = "Sounds good! Heading that way.";
+              if (lower.includes("center") || lower.includes("middle")) {
+                botTarget = findNearestFloor(
+                  maze,
+                  Math.floor(gridSize / 2),
+                  Math.floor(gridSize / 2)
+                );
+                reply = "Got it, moving toward the center!";
+              } else if (lower.includes("stay") || lower.includes("wait")) {
+                botTarget = [p1.r, p1.c];
+                reply = "Okay, I'll come find you!";
+              }
+              activeTimers.push(
+                setTimeout(() => {
+                  if (taskActive) appendChatMessage(2, reply);
+                }, 1000)
+              );
+            },
+            () => taskActive,
+            () => activeGame && activeGame.scene.scenes[0]
+          );
+
+          activeTimers.push(
+            setTimeout(() => {
+              if (taskActive)
+                appendChatMessage(2, "Hey! Where should we meet?");
+            }, 2000)
+          );
+        }
+      }
+
+      function findNearestFloor(maze, tr, tc) {
+        if (maze[tr] && maze[tr][tc] !== 1) return [tr, tc];
+        let best = [1, 1],
+          bestD = Infinity;
+        for (let r = 0; r < maze.length; r++) {
+          for (let c = 0; c < maze[r].length; c++) {
+            if (maze[r][c] !== 1) {
+              const d = Math.hypot(r - tr, c - tc);
+              if (d < bestD) {
+                bestD = d;
+                best = [r, c];
+              }
+            }
+          }
+        }
+        return best;
+      }
+
+      function nextBfsStep(maze, sr, sc, gr, gc) {
+        if (sr === gr && sc === gc) return null;
+        const q = [[sr, sc, null]];
+        const vis = new Set([`${sr},${sc}`]);
+        for (const [r, c, first] of q) {
+          for (const [dr, dc] of [
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+          ]) {
+            const nr = r + dr,
+              nc = c + dc,
+              k = `${nr},${nc}`;
+            if (
+              nr >= 0 &&
+              nr < maze.length &&
+              nc >= 0 &&
+              nc < maze.length &&
+              maze[nr][nc] !== 1 &&
+              !vis.has(k)
+            ) {
+              const step = first || [nr, nc];
+              if (nr === gr && nc === gc) return step;
+              vis.add(k);
+              q.push([nr, nc, step]);
+            }
+          }
+        }
+        return null;
+      }
+
+      function appendChatMessage(sender, msg) {
+        const log = document.getElementById("chat-log");
+        if (!log) return;
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-message";
+        const sSpan = document.createElement("span");
+        sSpan.className = sender === 1 ? "msg-p1" : "msg-p2";
+        sSpan.textContent = sender === 1 ? "You" : "Partner";
+        const cSpan = document.createElement("span");
+        cSpan.style.color = "#527045";
+        cSpan.textContent = ": ";
+        const tSpan = document.createElement("span");
+        tSpan.textContent = msg;
+        msgDiv.append(sSpan, cSpan, tSpan);
+        log.appendChild(msgDiv);
+        log.scrollTop = log.scrollHeight;
+
+        if (sender !== 1) {
+          const container = document.getElementById("chat-container");
+          if (container) {
+            container.classList.remove("pulse-incoming");
+            void container.offsetWidth;
+            container.classList.add("pulse-incoming");
+          }
+        }
+      }
+
+      function setupChatListeners(onSend, isActiveFn, getSceneFn) {
+        const chatInput = document.getElementById("chat-input");
+        const chatSendBtn = document.getElementById("chat-send");
+        if (!chatInput || !chatSendBtn) return;
+
+        activeKeyListener = (e) => {
+          if (!isActiveFn()) return;
+          if (e.target !== chatInput && document.activeElement !== chatInput) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              chatInput.focus();
+            } else if (
+              e.key.length === 1 &&
+              !e.ctrlKey &&
+              !e.metaKey &&
+              !e.altKey
+            ) {
+              chatInput.focus();
+            }
+          }
+        };
+        document.addEventListener("keydown", activeKeyListener);
+
+        const gc = document.getElementById("game-container");
+        if (gc) gc.addEventListener("pointerdown", () => chatInput.blur());
+
+        chatInput.addEventListener("input", function () {
+          this.style.height = "auto";
+          this.style.height = this.scrollHeight + "px";
+        });
+
+        chatSendBtn.addEventListener("click", () => {
+          if (!isActiveFn()) return;
+          if (chatInput.value.trim() !== "") {
+            onSend(chatInput.value);
+            chatInput.value = "";
+            chatInput.style.height = "auto";
+          }
+          chatInput.blur();
+        });
+
+        chatInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            chatSendBtn.click();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            chatInput.blur();
+          } else if (
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
+              e.key
+            ) &&
+            chatInput.value === "" &&
+            getSceneFn &&
+            getSceneFn()
+          ) {
+            e.preventDefault();
+            e.stopPropagation();
+            chatInput.blur();
+            getSceneFn().handleInput({
+              key: e.key,
+              preventDefault: () => {},
+              repeat: e.repeat,
+            });
+          }
+        });
+      }
+
+      goToLauncher();
+    </script>
+  </body>
+</html>
