@@ -426,14 +426,14 @@
           class="demo-nav-btn"
           onclick="jumpToStage('solo_target')"
         >
-          Jump to Solo Mazes (1/6)
+          Jump to solo practice &amp; mazes (1/6)
         </button>
         <button
           type="button"
           class="demo-nav-btn"
           onclick="jumpToStage('phase3_inst')"
         >
-          Jump to Partner &amp; Main Task
+          Jump to partner practice &amp; mazes (1/12)
         </button>
         <button type="button" class="demo-nav-btn" onclick="advanceStep()">
           Skip Current Step &rarr;
@@ -664,7 +664,6 @@
             <div class="cond-meta">
               Visibility: ${getVisMode(c).replace("_", " ")} &middot;
               Chat: ${c.chat_enabled ? "Enabled" : "Disabled"} &middot;
-              6 Solo + 12 Paired Mazes
             </div>
           </div>
           <button type="button" class="cond-launch-btn" onclick="startCondition(${idx})">
@@ -675,11 +674,9 @@
 
         root.innerHTML = `
         <div class="launcher-wrapper">
-          <div class="launcher-title">Multiplayer Maze Coordination — Interactive Demo</div>
+          <div class="launcher-title">Interactive demo for multiagent spatial coordination</div>
           <p class="launcher-sub">
-            Select any of the 8 experimental conditions below to preview the full participant experience
-            (Phase 1 Solo Explore, 6 Solo Mushroom Mazes, Phase 3 Chat/Partner Explore, and 12 Main Rendezvous Mazes
-            with a simulated partner).
+            Select one of the 8 experimental conditions below to preview the task with a simulated partner (fixed chat responses but moves around the maze to find you)
           </p>
           <div class="cond-list">${cardsHtml}</div>
         </div>
