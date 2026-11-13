@@ -424,16 +424,16 @@
         <button
           type="button"
           class="demo-nav-btn"
-          onclick="jumpToStage('solo_target', 0)"
+          onclick="jumpToStage('solo_target')"
         >
           Jump to Solo Mazes (1/6)
         </button>
         <button
           type="button"
           class="demo-nav-btn"
-          onclick="jumpToStage('main_instructions', 0)"
+          onclick="jumpToStage('phase3_inst')"
         >
-          Jump to Main Task (1/12)
+          Jump to Partner &amp; Main Task
         </button>
         <button type="button" class="demo-nav-btn" onclick="advanceStep()">
           Skip Current Step &rarr;
@@ -586,7 +586,6 @@
         return "full_vis";
       }
 
-      // Quadrant-balanced spawning (matches creating_session)
       function getQuadrant(r, c, mid = 7) {
         if (r <= mid && c <= mid) return "TL";
         if (r <= mid && c > mid) return "TR";
@@ -793,7 +792,7 @@
           <button type="button" class="btn-continue" onclick="advanceStep()">Start</button>
         </div>
       `;
-        mountPreviewScene("preview-container", false, false);
+        mountPreviewScene("preview-container", false, false, false);
       }
 
       function renderPhase2Instructions() {
@@ -804,12 +803,14 @@
             Next, you will complete <strong>6 solo mazes</strong>. In each maze, your goal is to find
             the red mushroom <span class="inline-mushroom"></span> as quickly as possible.
           </p>
+          <div class="preview-box" id="preview-container"></div>
           <p class="inst-text">
             This will help you get used to the visibility conditions before you play with your partner.
           </p>
           <button type="button" class="btn-continue" onclick="advanceStep()">Continue</button>
         </div>
       `;
+        mountPreviewScene("preview-container", false, true, true);
       }
 
       function renderPhase3Instructions() {
@@ -851,7 +852,7 @@
           <button type="button" class="btn-continue" onclick="advanceStep()">Join partner</button>
         </div>
       `;
-        mountPreviewScene("preview-container", true, false);
+        mountPreviewScene("preview-container", true, false, false);
       }
 
       function renderMainInstructions() {
@@ -887,7 +888,7 @@
           <button type="button" class="btn-continue" onclick="advanceStep()">Continue</button>
         </div>
       `;
-        mountPreviewScene("main-preview-container", true, true);
+        mountPreviewScene("main-preview-container", true, true, false);
       }
 
       function renderPartnerFeedback() {
@@ -925,7 +926,12 @@
       `;
       }
 
-      function mountPreviewScene(parentId, showPartner, applyFog, showMushroom = false) {
+      function mountPreviewScene(
+        parentId,
+        showPartner,
+        applyFog,
+        showMushroom = false
+      ) {
         const gridSize = 15;
         const tileSize = cond.constrained_camera && applyFog ? 40 : 32;
         const scale = tileSize / 16;
@@ -950,6 +956,13 @@
               "./assets/mazes/Basic_Charakter_Spritesheet.png",
               { frameWidth: 48, frameHeight: 48 }
             );
+            if (showMushroom) {
+              this.load.spritesheet(
+                "things",
+                "./assets/mazes/Basic_Grass_Biom_things.png",
+                { frameWidth: 16, frameHeight: 16 }
+              );
+            }
           }
           create() {
             const map = this.make.tilemap({ key: "empty_map" });
@@ -968,9 +981,17 @@
             ]);
 
             if (showMushroom) {
-            this.add.sprite(8 * tileSize + tileSize / 2, 7 * tileSize + tileSize / 2, "things", 6).setScale(scale);
-          }
-          if (showPartner) {
+              this.add
+                .sprite(
+                  8 * tileSize + tileSize / 2,
+                  7 * tileSize + tileSize / 2,
+                  "things",
+                  6
+                )
+                .setScale(scale);
+            }
+
+            if (showPartner) {
               const pCont = this.add.container(
                 8 * tileSize + tileSize / 2,
                 8 * tileSize + tileSize / 2,
@@ -1017,7 +1038,7 @@
             ? (cond.vision_radius * 2 + 1) * tileSize
             : gridSize * tileSize;
         activeGame = new Phaser.Game({
-          type: Phaser.AUTO,
+          type: Phaser.CANVAS,
           width: dim,
           height: dim,
           parent: parentId,
@@ -1101,7 +1122,7 @@
           mode: "solo_target",
           mazeFile: step.maze.logic,
           tiledFile: step.maze.tiled,
-          titleHtml: `<div style="text-align:center;font-size:26px;font-weight:bold;margin-bottom:10px;font-family:sans-serif;">Find the <span style="color:#c83e2b">mushroom</span><span class="inline-mushroom"></span>! (${step.idx}/${step.total})</div>`,
+          titleHtml: `<div style="text-align:center;font-size:26px;font-weight:bold;margin-bottom:10px;font-family:sans-serif;">Find the <span style="color:#c83e2b">mushroom</span><span class="inline-mushroom"></span>!</div>`,
           applyFog: true,
           showPartner: false,
         });
@@ -1147,6 +1168,7 @@
           Math.floor(gridSize / 2),
           Math.floor(gridSize / 2)
         );
+        let botWaitAtTarget = false;
 
         const useChat = opts.showPartner && cond.chat_enabled;
         const useConstrained = opts.applyFog && cond.constrained_camera;
@@ -1515,7 +1537,7 @@
         }
 
         activeGame = new Phaser.Game({
-          type: Phaser.AUTO,
+          type: Phaser.CANVAS,
           width: canvasDim,
           height: canvasDim,
           parent: "game-container",
@@ -1531,12 +1553,25 @@
             setInterval(() => {
               if (!taskActive || !p2.sprite || !activeGame) return;
               const scene = activeGame.scene.scenes[0];
-              const goal =
+              const nearP1 =
                 opts.mode === "rendezvous" &&
-                Math.hypot(p1.r - p2.r, p1.c - p2.c) <= 3
-                  ? [p1.r, p1.c]
-                  : botTarget;
-              const step = nextBfsStep(maze, p2.r, p2.c, goal[0], goal[1]);
+                Math.hypot(p1.r - p2.r, p1.c - p2.c) <= 4;
+              const goal = nearP1 ? [p1.r, p1.c] : botTarget;
+              let step = nextBfsStep(maze, p2.r, p2.c, goal[0], goal[1]);
+              if (!step && !nearP1 && !botWaitAtTarget) {
+                botTarget = findNearestFloor(
+                  maze,
+                  Math.floor(Math.random() * gridSize),
+                  Math.floor(Math.random() * gridSize)
+                );
+                step = nextBfsStep(
+                  maze,
+                  p2.r,
+                  p2.c,
+                  botTarget[0],
+                  botTarget[1]
+                );
+              }
               if (step) moveEntity(scene, 2, step[0], step[1]);
             }, 650)
           );
@@ -1547,22 +1582,59 @@
             (msg) => {
               appendChatMessage(1, msg);
               const lower = msg.toLowerCase();
+              const mid = Math.floor(gridSize / 2);
               let reply = "Sounds good! Heading that way.";
-              if (lower.includes("center") || lower.includes("middle")) {
-                botTarget = findNearestFloor(
-                  maze,
-                  Math.floor(gridSize / 2),
-                  Math.floor(gridSize / 2)
-                );
+              if (lower.includes("top") && lower.includes("left")) {
+                botTarget = findNearestFloor(maze, 1, 1);
+                botWaitAtTarget = true;
+                reply = "Got it, heading to the top left!";
+              } else if (lower.includes("top") && lower.includes("right")) {
+                botTarget = findNearestFloor(maze, 1, gridSize - 2);
+                botWaitAtTarget = true;
+                reply = "Got it, heading to the top right!";
+              } else if (lower.includes("bottom") && lower.includes("left")) {
+                botTarget = findNearestFloor(maze, gridSize - 2, 1);
+                botWaitAtTarget = true;
+                reply = "Got it, heading to the bottom left!";
+              } else if (lower.includes("bottom") && lower.includes("right")) {
+                botTarget = findNearestFloor(maze, gridSize - 2, gridSize - 2);
+                botWaitAtTarget = true;
+                reply = "Got it, heading to the bottom right!";
+              } else if (lower.includes("center") || lower.includes("middle")) {
+                botTarget = findNearestFloor(maze, mid, mid);
+                botWaitAtTarget = true;
                 reply = "Got it, moving toward the center!";
+              } else if (lower.includes("top") || lower.includes("up")) {
+                botTarget = findNearestFloor(maze, 1, mid);
+                botWaitAtTarget = true;
+                reply = "Okay, heading toward the top!";
+              } else if (lower.includes("bottom") || lower.includes("down")) {
+                botTarget = findNearestFloor(maze, gridSize - 2, mid);
+                botWaitAtTarget = true;
+                reply = "Okay, heading toward the bottom!";
+              } else if (lower.includes("left")) {
+                botTarget = findNearestFloor(maze, mid, 1);
+                botWaitAtTarget = true;
+                reply = "Moving to the left side!";
+              } else if (lower.includes("right")) {
+                botTarget = findNearestFloor(maze, mid, gridSize - 2);
+                botWaitAtTarget = true;
+                reply = "Moving to the right side!";
               } else if (lower.includes("stay") || lower.includes("wait")) {
                 botTarget = [p1.r, p1.c];
+                botWaitAtTarget = true;
                 reply = "Okay, I'll come find you!";
+              } else if (
+                lower.includes("hi") ||
+                lower.includes("hello") ||
+                lower.includes("hey")
+              ) {
+                reply = "Hey! Where should we meet?";
               }
               activeTimers.push(
                 setTimeout(() => {
                   if (taskActive) appendChatMessage(2, reply);
-                }, 1000)
+                }, 900)
               );
             },
             () => taskActive,
