@@ -287,6 +287,13 @@
         justify-content: center;
       }
 
+      .left-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
       #game-container {
         border: 2px solid #333;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -306,9 +313,13 @@
         justify-content: space-between;
         align-items: center;
         width: 220px;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         font-size: 16px;
         box-sizing: border-box;
+      }
+
+      .left-panel > .info-box:last-child {
+        margin-bottom: 0;
       }
 
       .info-label {
@@ -331,7 +342,7 @@
 
       .chat-container {
         width: 420px;
-        height: 600px;
+        height: 300px;
         display: flex;
         flex-direction: column;
         border: 3px solid #528c34;
@@ -1019,7 +1030,7 @@
       function renderPartnerFeedback() {
         document.getElementById("app-root").innerHTML = `
         <div class="inst-wrapper" style="max-width: 720px; margin-top: 40px;">
-          <div class="inst-header">Final Question</div>
+          <div class="inst-header">Final Questions</div>
           <p class="inst-text">
             Before finishing, please write a brief note (1–3 sentences) sharing your
             impression of your partner during the task
@@ -1030,6 +1041,10 @@
             }
           </p>
           <textarea class="feedback-textarea" placeholder="Write your impression here..."></textarea>
+          <p class="inst-text">
+            What strategies did you and your partner use to find each other?
+          </p>
+          <textarea class="feedback-textarea" placeholder="Write your strategies here..."></textarea>
           <div>
             <button type="button" class="btn-continue" onclick="advanceStep()">Continue</button>
           </div>
@@ -1188,7 +1203,7 @@
             <span class="info-label">Time Left</span>
             <span class="info-value" id="timer-display">00:30</span>
           </div>
-          <div class="chat-container" id="chat-container" style="width: 100%; height: 380px;">
+          <div class="chat-container" id="chat-container" style="width: 420px; height: 300px; margin: 0 auto;">
             <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
             <div id="chat-log"></div>
             <div class="chat-input-row">
@@ -1311,31 +1326,30 @@
         document.getElementById("app-root").innerHTML = `
         <div class="page-wrapper">
           ${opts.titleHtml || ""}
-          <div class="info-box" id="timer-box">
-            <span class="info-label">${
-              opts.countdownSecs ? "Time Left" : "Time"
-            }</span>
-            <span class="info-value" id="timer-display">${
-              opts.countdownSecs ? "00:30" : "00:00"
-            }</span>
-          </div>
           <div class="task-container">
-            ${
-              useChat
-                ? `
-              <div class="chat-container" id="chat-container" style="height: ${Math.max(
-                canvasDim,
-                360
-              )}px;">
-                <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
-                <div id="chat-log"></div>
-                <div class="chat-input-row">
-                  <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
-                  <button type="button" id="chat-send">Send</button>
-                </div>
-              </div>`
-                : ""
-            }
+            <div class="left-panel">
+              <div class="info-box" id="timer-box">
+                <span class="info-label">${
+                  opts.countdownSecs ? "Time Left" : "Time"
+                }</span>
+                <span class="info-value" id="timer-display">${
+                  opts.countdownSecs ? "00:30" : "00:00"
+                }</span>
+              </div>
+              ${
+                useChat
+                  ? `
+                <div class="chat-container" id="chat-container" style="height: 300px;">
+                  <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
+                  <div id="chat-log"></div>
+                  <div class="chat-input-row">
+                    <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
+                    <button type="button" id="chat-send">Send</button>
+                  </div>
+                </div>`
+                  : ""
+              }
+            </div>
             <div id="game-container"></div>
           </div>
         </div>
