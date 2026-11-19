@@ -124,7 +124,7 @@
       /* --- INSTRUCTION & COMPREHENSION PAGES --- */
       .inst-wrapper {
         max-width: 820px;
-        margin: 24px auto;
+        margin: 8px auto 20px auto;
         text-align: center;
         color: #111;
       }
@@ -276,8 +276,15 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-top: 10px;
+        margin-top: 4px;
         font-family: "Consolas", "Monaco", monospace;
+      }
+
+      .fit-stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform-origin: top center;
       }
 
       .task-container {
@@ -620,7 +627,15 @@
       let activeKeyListener = null;
       let spawnHistory = { quadPairs: [], points: [] };
 
+      let activeResizeObserver = null;
+
       function cleanupCurrentView() {
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+        if (activeResizeObserver) {
+          activeResizeObserver.disconnect();
+          activeResizeObserver = null;
+        }
         activeTimers.forEach((t) => {
           clearInterval(t);
           clearTimeout(t);
@@ -634,6 +649,29 @@
           activeGame.destroy(true);
           activeGame = null;
         }
+      }
+
+      function enableFixedTaskViewport() {
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        const fit = () => {
+          const stage = document.getElementById("fit-stage");
+          if (!stage) return;
+          stage.style.transform = "scale(1)";
+          const nav = document.getElementById("demo-nav");
+          const navH = nav && nav.style.display !== "none" ? nav.offsetHeight + 24 : 16;
+          const availW = Math.max(200, window.innerWidth - 24);
+          const availH = Math.max(200, window.innerHeight - navH - 12);
+          const scale = Math.min(1, availW / stage.scrollWidth, availH / stage.scrollHeight);
+          stage.style.transform = `scale(${scale})`;
+        };
+        window.addEventListener("resize", fit);
+        const stageEl = document.getElementById("fit-stage");
+        if (window.ResizeObserver && stageEl) {
+          activeResizeObserver = new ResizeObserver(fit);
+          activeResizeObserver.observe(stageEl);
+        }
+        requestAnimationFrame(fit);
       }
 
       function shuffle(arr) {
@@ -1195,24 +1233,27 @@
       // =========================================================================
       function renderChatPractice() {
         document.getElementById("app-root").innerHTML = `
-        <div class="page-wrapper" style="max-width: 520px; margin: 25px auto;">
-          <div style="font-family: sans-serif; text-align: center; margin-bottom: 14px;">
-            <h2 style="margin: 0; color: #3d5233;">Say hello and practice using the chat box with your partner before entering the maze.</h2>
-          </div>
-          <div class="info-box">
-            <span class="info-label">Time Left</span>
-            <span class="info-value" id="timer-display">00:30</span>
-          </div>
-          <div class="chat-container" id="chat-container" style="width: 420px; height: 300px; margin: 0 auto;">
-            <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
-            <div id="chat-log"></div>
-            <div class="chat-input-row">
-              <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
-              <button type="button" id="chat-send">Send</button>
+        <div class="page-wrapper" style="max-width: 520px; margin: 10px auto;">
+          <div class="fit-stage" id="fit-stage">
+            <div style="font-family: sans-serif; text-align: center; margin-bottom: 14px;">
+              <h2 style="margin: 0; color: #3d5233;">Say hello and practice using the chat box with your partner before entering the maze.</h2>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Time Left</span>
+              <span class="info-value" id="timer-display">00:30</span>
+            </div>
+            <div class="chat-container" id="chat-container" style="width: 420px; height: 300px; margin: 0 auto;">
+              <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
+              <div id="chat-log"></div>
+              <div class="chat-input-row">
+                <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
+                <button type="button" id="chat-send">Send</button>
+              </div>
             </div>
           </div>
         </div>
       `;
+        enableFixedTaskViewport();
 
         let rem = 30;
         activeTimers.push(
@@ -1325,35 +1366,38 @@
 
         document.getElementById("app-root").innerHTML = `
         <div class="page-wrapper">
-          ${opts.titleHtml || ""}
-          <div class="task-container">
-            <div class="left-panel">
-              <div class="info-box" id="timer-box">
-                <span class="info-label">${
-                  opts.countdownSecs ? "Time Left" : "Time"
-                }</span>
-                <span class="info-value" id="timer-display">${
-                  opts.countdownSecs ? "00:30" : "00:00"
-                }</span>
+          <div class="fit-stage" id="fit-stage">
+            ${opts.titleHtml || ""}
+            <div class="task-container">
+              <div class="left-panel">
+                <div class="info-box" id="timer-box">
+                  <span class="info-label">${
+                    opts.countdownSecs ? "Time Left" : "Time"
+                  }</span>
+                  <span class="info-value" id="timer-display">${
+                    opts.countdownSecs ? "00:30" : "00:00"
+                  }</span>
+                </div>
+                ${
+                  useChat
+                    ? `
+                  <div class="chat-container" id="chat-container" style="height: 300px;">
+                    <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
+                    <div id="chat-log"></div>
+                    <div class="chat-input-row">
+                      <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
+                      <button type="button" id="chat-send">Send</button>
+                    </div>
+                  </div>`
+                    : ""
+                }
               </div>
-              ${
-                useChat
-                  ? `
-                <div class="chat-container" id="chat-container" style="height: 300px;">
-                  <div class="chat-header"><span class="chat-status-dot"></span><span>Message your partner here</span></div>
-                  <div id="chat-log"></div>
-                  <div class="chat-input-row">
-                    <textarea id="chat-input" placeholder="Just start typing or press Enter ..." rows="1"></textarea>
-                    <button type="button" id="chat-send">Send</button>
-                  </div>
-                </div>`
-                  : ""
-              }
+              <div id="game-container"></div>
             </div>
-            <div id="game-container"></div>
           </div>
         </div>
       `;
+        enableFixedTaskViewport();
 
         let rem = opts.countdownSecs || 0;
         activeTimers.push(
